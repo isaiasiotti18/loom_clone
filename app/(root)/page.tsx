@@ -1,5 +1,6 @@
 import Header from "@/components/Header";
 import VideoCard from "@/components/VideoCard";
+import { dummyCards } from "@/constants";
 import React from "react";
 
 const Page = () => {
@@ -8,17 +9,11 @@ const Page = () => {
       <Header title="All Videos" subHeader="Public Library" />
       <h1 className="text-2xl font-karla">Welcome to Loom Clone.</h1>
 
-      <VideoCard
-        id="1"
-        title="Snapchat Message - 30 june 2025"
-        thumbnail="/assets/samples/thumbnail (1).png"
-        createdAt="2025-05-01 06:25:54.437"
-        userImg="/assets/images/jason.png"
-        username="Jason"
-        views={10}
-        visibility="public"
-        duration={156}
-      />
+      <section className="video-grid">
+        {dummyCards.map((card) => (
+          <VideoCard key={card.id} {...card} />
+        ))}
+      </section>
     </main>
   );
 };
