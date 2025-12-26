@@ -4,7 +4,7 @@ export const useFileInput = (maxSize: number) => {
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [duration, setDuration] = useState(0);
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
@@ -37,5 +37,24 @@ export const useFileInput = (maxSize: number) => {
         video.src = objectUrl;
       }
     }
+  };
+
+  const resetFile = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+
+    setFile(null);
+    setPreviewUrl("");
+    setDuration(0);
+
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  return {
+    file,
+    previewUrl,
+    duration,
+    inputRef,
+    handleFileChange,
+    resetFile,
   };
 };
