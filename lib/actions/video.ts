@@ -7,6 +7,8 @@ import { BUNNY } from "@/constants";
 import { db } from "@/drizzle/db";
 import { videos } from "@/drizzle/schema";
 import { revalidatePath } from "next/cache";
+import { aj } from "../arcjet";
+import { fixedWindow, request } from "@arcjet/next";
 
 const VIDEO_STREAM_BASE_URL = BUNNY.STREAM_BASE_URL;
 const THUMBNAIL_STORAGE_BASE_URL = BUNNY.STORAGE_BASE_URL;
@@ -30,70 +32,104 @@ const revalidatePaths = async (paths: string[]) => {
   paths.forEach((path) => revalidatePath(path));
 };
 
-// Server Actions
-export const getVideoUploadUrl = withErrorHandling(async () => {
-  await getSessionUserId();
-
-  const videoResponse = await apiFetch<BunnyVideoResponse>(
-    `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos`,
-    {
-      method: "POST",
-      bunnyType: "stream",
-      body: { title: "Temporary title", collectionId: "" },
-    }
+const validateWithArcjet = async (fingerprint: string) => {
+  const rateLimit = aj.withRule(
+    fixedWindow({
+      mode: "LIVE",
+      window: "1m",
+      max: 1,
+      characteristics: ["fingerprint"],
+    })
   );
 
-  const uploadUrl = `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoResponse}`;
+  const req = await request();
 
-  return {
-    videoId: videoResponse.guid,
-    uploadUrl,
-    accessKey: ACCESS_KEY.streamAccessKey,
-  };
+  const decision = await rateLimit.protect(req, { fingerprint, requested: 1 });
+
+  if (decision.isDenied()) {
+    throw new Error("Rate Limit Exceeded");
+  }
+};
+
+// Server Actions
+export const getVideoUploadUrl = withErrorHandling(async () => {
+  try {
+    await getSessionUserId();
+
+    const videoResponse = await apiFetch<BunnyVideoResponse>(
+      `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos`,
+      {
+        method: "POST",
+        bunnyType: "stream",
+        body: { title: "Temporary title", collectionId: "" },
+      }
+    );
+
+    const uploadUrl = `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoResponse.guid}`;
+
+    return {
+      videoId: videoResponse.guid,
+      uploadUrl,
+      accessKey: ACCESS_KEY.streamAccessKey,
+    };
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 });
 
 export const getThumbnailUploadUrl = withErrorHandling(
   async (videoId: string) => {
-    const fileName = `${Date.now()}-${videoId}-thumbnail`;
-    const uploadUrl = `${THUMBNAIL_STORAGE_BASE_URL}/thumbnails/${fileName}`;
-    const cdnUrl = `${THUMBNAIL_CDN_URL}/thumbnails/${fileName}`;
+    try {
+      const fileName = `${Date.now()}-${videoId}-thumbnail`;
+      const uploadUrl = `${THUMBNAIL_STORAGE_BASE_URL}/thumbnails/${fileName}`;
+      const cdnUrl = `${THUMBNAIL_CDN_URL}/thumbnails/${fileName}`;
 
-    return {
-      uploadUrl,
-      cdnUrl,
-      accessKey: ACCESS_KEY.storageAccessKey,
-    };
+      return {
+        uploadUrl,
+        cdnUrl,
+        accessKey: ACCESS_KEY.storageAccessKey,
+      };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 );
 
 export const saveVideoDetails = withErrorHandling(
   async (videoDetails: VideoDetails) => {
-    const userId = await getSessionUserId();
+    try {
+      const userId = await getSessionUserId();
 
-    await apiFetch(
-      `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoDetails.videoId}`,
-      {
-        method: "POST",
-        bunnyType: "stream",
-        body: {
-          title: videoDetails.title,
-          description: videoDetails.description,
-        },
-      }
-    );
+      await apiFetch(
+        `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoDetails.videoId}`,
+        {
+          method: "POST",
+          bunnyType: "stream",
+          body: {
+            title: videoDetails.title,
+            description: videoDetails.description,
+          },
+        }
+      );
 
-    await db.insert(videos).values({
-      ...videoDetails,
-      videoUrl: `${BUNNY.EMBED_URL}/${BUNNY_LIBRARY_ID}/${videoDetails.videoId}`,
-      userId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      await db.insert(videos).values({
+        ...videoDetails,
+        videoUrl: `${BUNNY.EMBED_URL}/${BUNNY_LIBRARY_ID}/${videoDetails.videoId}`,
+        userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
-    revalidatePaths(["/"]);
+      revalidatePaths(["/"]);
 
-    return {
-      videoId: videoDetails.videoId,
-    };
+      return {
+        videoId: videoDetails.videoId,
+      };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }
 );
