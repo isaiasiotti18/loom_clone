@@ -1,9 +1,7 @@
 import EmptyState from "@/components/EmptyState";
 import Header from "@/components/Header";
 import VideoCard from "@/components/VideoCard";
-import { dummyCards } from "@/constants";
 import { getAllVideos } from "@/lib/actions/video";
-import React from "react";
 
 const Page = async ({ searchParams }: SearchParams) => {
   const { query, filter, page } = await searchParams;
