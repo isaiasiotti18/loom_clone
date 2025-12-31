@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { ilike, sql } from "drizzle-orm";
@@ -142,25 +143,59 @@ export const generatePagination = (currentPage: number, totalPages: number) => {
   ];
 };
 
+// export const getMediaStreams = async (
+//   withMic: boolean
+// ): Promise<MediaStreams> => {
+//   const displayStream = await navigator.mediaDevices.getDisplayMedia({
+//     video: DEFAULT_VIDEO_CONFIG,
+//     audio: true,
+//   });
+
+//   const hasDisplayAudio = displayStream.getAudioTracks().length > 0;
+//   let micStream: MediaStream | null = null;
+
+//   if (withMic) {
+//     micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+//     micStream
+//       .getAudioTracks()
+//       .forEach((track: MediaStreamTrack) => (track.enabled = true));
+//   }
+
+//   return { displayStream, micStream, hasDisplayAudio };
+// };
+
 export const getMediaStreams = async (
   withMic: boolean
 ): Promise<MediaStreams> => {
   const displayStream = await navigator.mediaDevices.getDisplayMedia({
     video: DEFAULT_VIDEO_CONFIG,
-    audio: true,
+    audio: true, // áudio do sistema (se existir)
   });
 
   const hasDisplayAudio = displayStream.getAudioTracks().length > 0;
+
   let micStream: MediaStream | null = null;
 
   if (withMic) {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    micStream
-      .getAudioTracks()
-      .forEach((track: MediaStreamTrack) => (track.enabled = true));
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      micStream
+        .getAudioTracks()
+        .forEach((track: MediaStreamTrack) => (track.enabled = true));
+    } catch (error) {
+      console.warn(
+        "[ScreenRecording] Microphone not found or permission denied. Continuing without mic."
+      );
+      micStream = null;
+    }
   }
 
-  return { displayStream, micStream, hasDisplayAudio };
+  return {
+    displayStream,
+    micStream,
+    hasDisplayAudio,
+  };
 };
 
 export const createAudioMixer = (
@@ -301,7 +336,7 @@ export function daysAgo(inputDate: Date): string {
 }
 
 export const createIframeLink = (videoId: string) =>
-  `https://iframe.mediadelivery.net/embed/421422/${videoId}?autoplay=true&preload=true`;
+  `https://iframe.mediadelivery.net/embed/570876/${videoId}?autoplay=true&preload=true`;
 
 export const doesTitleMatch = (videos: any, searchQuery: string) =>
   ilike(

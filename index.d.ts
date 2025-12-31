@@ -88,7 +88,7 @@ declare interface VideoDetailHeaderProps {
   username?: string;
   videoId: string;
   ownerId: string;
-  visibility: string;
+  visibility: Visibility;
   thumbnailUrl: string;
 }
 
@@ -111,7 +111,7 @@ declare interface ImageWithFallbackProps extends Omit<ImageProps, "src"> {
   src: string | null;
 }
 
-const Visibility = "public" | "private";
+type Visibility = "public" | "private";
 
 declare interface VideoDetails {
   videoId: string;
@@ -242,10 +242,10 @@ declare interface ParamsWithSearch {
 }
 
 declare interface DropdownListProps {
-  options: string[];
-  selectedOption: string;
-  onOptionSelect: (option: string) => void;
-  triggerElement: ReactNode;
+  options?: string[];
+  selectedOption?: string;
+  onOptionSelect?: (option: string) => void | Promise<void>;
+  triggerElement?: ReactNode;
 }
 
 declare interface EmptyStateProps {

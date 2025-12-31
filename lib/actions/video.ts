@@ -15,7 +15,7 @@ import { user, videos } from "@/drizzle/schema";
 import { revalidatePath } from "next/cache";
 import aj from "../arcjet";
 import { fixedWindow, request } from "@arcjet/next";
-import { and, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 const VIDEO_STREAM_BASE_URL = BUNNY.STREAM_BASE_URL;
 const THUMBNAIL_STORAGE_BASE_URL = BUNNY.STORAGE_BASE_URL;
@@ -212,10 +212,121 @@ export const getAllVideos = withErrorHandling(
 
 export const getVideoById = withErrorHandling(async (videoId: string) => {
   const [videoRecord] = await buildVideoWithUserQuery().where(
-    eq(videos.id, sql`${videoId}::uuid`)
+    eq(videos.videoId, videoId)
   );
 
-  console.log("Video Record in getVideoById:", videoRecord);
-
-  return videoRecord;
+  return videoRecord ?? null;
 });
+
+export const updateVideoVisibility = withErrorHandling(
+  async (videoId: string, visibility: "public" | "private") => {
+    try {
+      const userId = await getSessionUserId();
+
+      await validateWithArcjet(userId);
+
+      await db
+        .update(videos)
+        .set({ visibility, updatedAt: new Date() })
+        .where(and(eq(videos.id, videoId), eq(videos.userId, userId)));
+
+      revalidatePaths(["/"]);
+
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+);
+
+export const deleteVideo = withErrorHandling(
+  async (videoId: string, thumbnailUrl: string) => {
+    try {
+      const userId = await getSessionUserId();
+
+      await validateWithArcjet(userId);
+
+      // Extract thumbnail file name from URL
+      const thumbnailFileName = thumbnailUrl.split("/").pop();
+
+      // Delete video from Bunny Stream
+      await apiFetch(
+        `${VIDEO_STREAM_BASE_URL}/${BUNNY_LIBRARY_ID}/videos/${videoId}`,
+        {
+          method: "DELETE",
+          bunnyType: "stream",
+        }
+      );
+
+      // Delete thumbnail from Bunny Storage if exists
+      if (thumbnailFileName) {
+        await apiFetch(
+          `${THUMBNAIL_STORAGE_BASE_URL}/thumbnails/${thumbnailFileName}`,
+          {
+            method: "DELETE",
+            bunnyType: "storage",
+          }
+        );
+      }
+
+      // Delete from database
+      await db
+        .delete(videos)
+        .where(and(eq(videos.id, videoId), eq(videos.userId, userId)));
+
+      revalidatePaths(["/"]);
+
+      return { success: true };
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }
+);
+
+export const getTranscript = withErrorHandling(async (videoId: string) => {
+  const response = await fetch(
+    `${BUNNY.TRANSCRIPT_URL}/${videoId}/captions/en-auto.vtt`
+  );
+  return response.text();
+});
+
+export const getAllVideosByUser = withErrorHandling(
+  async (
+    userIdParameter: string,
+    searchQuery: string = "",
+    sortFilter?: string
+  ) => {
+    const currentUserId = (
+      await auth.api.getSession({ headers: await headers() })
+    )?.user.id;
+    const isOwner = userIdParameter === currentUserId;
+
+    const [userInfo] = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        image: user.image,
+        email: user.email,
+      })
+      .from(user)
+      .where(eq(user.id, userIdParameter));
+    if (!userInfo) throw new Error("User not found");
+
+    /* eslint-disable @typescript-eslint/no-explicit-any */
+    const conditions = [
+      eq(videos.userId, userIdParameter),
+      !isOwner && eq(videos.visibility, "public"),
+      searchQuery.trim() && ilike(videos.title, `%${searchQuery}%`),
+    ].filter(Boolean) as any[];
+
+    const userVideos = await buildVideoWithUserQuery()
+      .where(and(...conditions))
+      .orderBy(
+        sortFilter ? getOrderByClause(sortFilter) : desc(videos.createdAt)
+      );
+
+    return { user: userInfo, videos: userVideos, count: userVideos.length };
+  }
+);
