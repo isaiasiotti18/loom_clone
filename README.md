@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Loom Clone — Full Stack Video Recording Platform
 
-## Getting Started
+Plataforma full stack inspirada no **Loom**, focada em **gravação de tela, upload e compartilhamento de vídeos**, construída com preocupações reais de **arquitetura, performance, segurança e experiência do usuário**.
 
-First, run the development server:
+Este projeto não é uma demo. Foi pensado como um **produto próximo de produção**, abordando problemas comuns de aplicações modernas de vídeo.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎯 Objetivo do Projeto
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Reproduzir os principais fluxos de uma plataforma de screen recording, explorando:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- APIs de mídia no browser  
+- Upload e entrega de vídeos em escala  
+- Autenticação moderna  
+- Segurança desde o primeiro dia  
+- Decisões técnicas orientadas a produto  
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🧱 Stack Tecnológica
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Frontend:** Next.js, React, Tailwind CSS  
+- **Backend:** Node.js (API integrada ao Next.js)  
+- **Banco de Dados:** Neon Database + PostgreSQL  
+- **ORM:** Drizzle  
+- **Autenticação:** Better Auth (social login)  
+- **Segurança:** Arcjet (bot protection, rate limiting, validação de email)  
+- **Vídeo (upload + streaming):** Bunny.net (Storage + CDN)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## ⚙️ Funcionalidades
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Gravação de tela diretamente no navegador (Browser Media APIs)  
+- Upload de vídeos com Bunny Storage  
+- Streaming otimizado via CDN  
+- Autenticação social de usuários  
+- Controle de permissões de vídeos (público / privado)  
+- Geração de links públicos para compartilhamento  
+- Listagem e gerenciamento de vídeos por usuário  
+- Proteção contra bots maliciosos  
+- Controle de tráfego e validação de email  
+- Interface responsiva (mobile-first)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 📚 Aprendizados Técnicos
+
+- Integração de APIs de mídia no browser  
+- Upload e entrega de arquivos grandes usando CDN  
+- Autenticação moderna com social login  
+- Segurança em aplicações públicas desde o primeiro dia  
+- Trade-offs entre custo, performance e qualidade de vídeo  
+- Arquitetura full stack orientada a produto  
+
+---
+
+## 🚧 Próximos Passos
+
+- Comentários e reações em vídeos  
+- Analytics de visualização  
+- Workspaces e colaboração em equipe  
+- Compressão e processamento avançado de vídeo  
+- Observabilidade e monitoramento  
+- Hardening adicional de segurança  
+
+---
+
+## 📎 Repositório
+
+https://github.com/isaiasiotti18/loom_clone
+
+---
+
+## 🏷️ Tags
+
+#frontend #reactjs #nextjs #javascript #typescript #fullstack #nodejs #tailwindcss #databases #postgresql #orm #systemdesign #webdevelopment
